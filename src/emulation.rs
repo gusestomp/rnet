@@ -40,6 +40,7 @@ define_enum!(
     Chrome141,
     Chrome142,
     Chrome143,
+    Chrome144,
     Edge101,
     Edge122,
     Edge127,
