@@ -1,5 +1,4 @@
 use std::{
-    future,
     pin::Pin,
     sync::Arc,
     task::{Context, Poll},
@@ -9,13 +8,14 @@ use bytes::Bytes;
 use futures_util::{FutureExt, Stream, StreamExt, stream::BoxStream};
 use http_body_util::BodyExt;
 use pyo3::{
-    IntoPyObjectExt, intern,
+    coroutine::CancelHandle,
+    intern,
     prelude::*,
     pybacked::{PyBackedBytes, PyBackedStr},
 };
 use tokio::{sync::Mutex, task::JoinHandle};
 
-use crate::{buffer::PyBuffer, error::Error, header::HeaderMap};
+use crate::{buffer::PyBuffer, client::nogil::NoGIL, error::Error, header::HeaderMap};
 
 type Pending = Option<JoinHandle<Option<PyResult<PyBytesLike>>>>;
 
@@ -47,7 +47,7 @@ pub struct PyStream {
 
 /// A bytes stream response.
 #[derive(Clone)]
-#[pyclass(subclass)]
+#[pyclass(subclass, frozen, skip_from_py_object)]
 pub struct Streamer(Arc<Mutex<Option<wreq::Response>>>);
 
 // ===== impl PyStream =====
@@ -107,24 +107,11 @@ impl Streamer {
     }
 
     #[inline]
-    fn __aiter__(slf: PyRef<Self>) -> PyRef<Self> {
-        slf
-    }
-
-    #[inline]
-    fn __next__(&mut self, py: Python) -> PyResult<Frame> {
+    fn __next__(&self, py: Python) -> PyResult<Frame> {
         py.detach(|| {
             pyo3_async_runtimes::tokio::get_runtime()
                 .block_on(self.clone().next(|| Error::StopIteration))
         })
-    }
-
-    #[inline]
-    fn __anext__<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        pyo3_async_runtimes::tokio::future_into_py(
-            py,
-            self.clone().next(|| Error::StopAsyncIteration),
-        )
     }
 
     #[inline]
@@ -133,14 +120,8 @@ impl Streamer {
     }
 
     #[inline]
-    fn __aenter__<'py>(slf: PyRef<'py, Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let slf = slf.into_py_any(py)?;
-        pyo3_async_runtimes::tokio::future_into_py(py, future::ready(Ok(slf)))
-    }
-
-    #[inline]
     fn __exit__<'py>(
-        &mut self,
+        &self,
         py: Python,
         _exc_type: &Bound<'py, PyAny>,
         _exc_value: &Bound<'py, PyAny>,
@@ -148,24 +129,46 @@ impl Streamer {
     ) {
         py.detach(|| self.0.blocking_lock().take());
     }
+}
+
+#[pymethods]
+impl Streamer {
+    #[inline]
+    fn __aiter__(slf: PyRef<Self>) -> PyRef<Self> {
+        slf
+    }
 
     #[inline]
-    fn __aexit__<'py>(
-        &mut self,
-        py: Python<'py>,
-        _exc_type: &Bound<'py, PyAny>,
-        _exc_value: &Bound<'py, PyAny>,
-        _traceback: &Bound<'py, PyAny>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn __anext__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        pyo3_async_runtimes::tokio::future_into_py(
+            py,
+            self.clone().next(|| Error::StopAsyncIteration),
+        )
+    }
+
+    #[inline]
+    async fn __aenter__(slf: Py<Self>) -> PyResult<Py<Self>> {
+        Ok(slf)
+    }
+
+    #[inline]
+    async fn __aexit__(
+        &self,
+        _exc_type: Py<PyAny>,
+        _exc_val: Py<PyAny>,
+        _traceback: Py<PyAny>,
+    ) -> PyResult<()> {
         let this = self.0.clone();
-        pyo3_async_runtimes::tokio::future_into_py(py, async move {
-            this.lock()
-                .await
-                .take()
-                .map(drop)
-                .map(PyResult::Ok)
-                .transpose()
-        })
+        NoGIL::new(
+            async move {
+                if let Some(resp) = this.lock().await.take() {
+                    drop(resp)
+                }
+                Ok(())
+            },
+            CancelHandle::new(),
+        )
+        .await
     }
 }
 
@@ -213,6 +216,10 @@ impl Stream for PyStream {
             Some(pending) => pending,
             None => {
                 let runtime = pyo3_async_runtimes::tokio::get_runtime();
+
+                // Move GIL acquisition to blocking threads to prevent blocking async runtime.
+                // This is crucial because holding the GIL in async tasks can block the entire
+                // async executor and cause deadlocks or performance degradation.
                 match this.inner {
                     PyStreamSource::Sync(ref ob) => {
                         let ob = ob.clone();

@@ -196,45 +196,30 @@ class Message:
     Returns the close code and reason of the message if it is a close message.
     """
 
-    @staticmethod
-    def text_from_json(json: Dict[str, Any]) -> "Message":
-        r"""
-        Creates a new text message from the JSON representation.
-
-        # Arguments
-        * `json` - The JSON representation of the message.
-        """
-        ...
+    json: Any
+    r"""
+    Returns the JSON representation of the message if it is a text message with JSON content.
+    """
 
     @staticmethod
-    def binary_from_json(json: Dict[str, Any]) -> "Message":
-        r"""
-        Creates a new binary message from the JSON representation.
-
-        # Arguments
-        * `json` - The JSON representation of the message.
-        """
-        ...
-
-    @staticmethod
-    def from_text(text: str) -> "Message":
-        r"""
-        Creates a new text message.
-
-        # Arguments
-
-        * `text` - The text content of the message.
-        """
-        ...
-
-    @staticmethod
-    def from_binary(data: bytes) -> "Message":
+    def from_binary(data: bytes | Any) -> "Message":
         r"""
         Creates a new binary message.
 
         # Arguments
 
-        * `data` - The binary data of the message.
+        * `data` - The binary data or any JSON-serializable data of the message.
+        """
+        ...
+
+    @staticmethod
+    def from_text(data: str | Any) -> "Message":
+        r"""
+        Creates a new text message.
+
+        # Arguments
+
+        * `data` - The text content or any JSON-serializable data of the message.
         """
         ...
 
@@ -269,12 +254,6 @@ class Message:
 
         * `code` - The close code.
         * `reason` - An optional reason for closing.
-        """
-        ...
-
-    def json(self) -> Any:
-        r"""
-        Returns the JSON representation of the message.
         """
         ...
 
@@ -434,7 +413,24 @@ class Response:
 
     async def close(self) -> None:
         r"""
-        Close the response connection.
+        Close the response.
+
+        **Current behavior:**
+
+        - When connection pooling is **disabled**: This method closes the network connection.
+        - When connection pooling is **enabled**: This method closes the response, prevents further body reads,
+          and returns the connection to the pool for reuse.
+
+        **Future changes:**
+
+        In future versions, this method will be changed to always close the network connection regardless of
+        whether connection pooling is enabled or not.
+
+        **Recommendation:**
+
+        It is **not recommended** to manually call this method at present. Instead, use context managers
+        (async with statement) to properly manage response lifecycle. Wait for the improved implementation
+        in future versions.
         """
 
     async def __aenter__(self) -> Any: ...
@@ -746,6 +742,9 @@ class ClientConfig(TypedDict):
     
     Note that connections will fail if the provided interface name is not a
     network interface that currently exists when a connection is established.
+
+    [man-7-socket]: https://man7.org/linux/man-pages/man7/socket.7.html
+    [man-7p-ip]: https://docs.oracle.com/cd/E86824_01/html/E54777/ip-7p.html
     """
 
     # ========= DNS options =========
@@ -779,41 +778,6 @@ class Request(TypedDict):
     The Emulation settings for the request.
     """
 
-    proxy: NotRequired[Proxy]
-    """
-    The proxy to use for the request.
-    """
-
-    local_address: NotRequired[IPv4Address | IPv6Address]
-    """
-    Bind to a local IP Address.
-    """
-
-    local_addresses: NotRequired[Tuple[IPv4Address | None, IPv6Address | None]]
-    """
-    Bind to dual-stack local IP Addresses.
-    """
-
-    interface: NotRequired[str]
-    """
-    Bind to an interface by SO_BINDTODEVICE.
-    """
-
-    timeout: NotRequired[datetime.timedelta]
-    """
-    The timeout to use for the request.
-    """
-
-    read_timeout: NotRequired[datetime.timedelta]
-    """
-    The read timeout to use for the request.
-    """
-
-    version: NotRequired[Version]
-    """
-    The HTTP version to use for the request.
-    """
-
     headers: NotRequired[Dict[str, str] | HeaderMap]
     """
     The headers to use for the request.
@@ -832,6 +796,60 @@ class Request(TypedDict):
     cookies: NotRequired[str | Dict[str, str]]
     """
     The cookies to use for the request.
+    """
+
+    proxy: NotRequired[Proxy]
+    """
+    The proxy to use for the request.
+    """
+
+    local_address: NotRequired[IPv4Address | IPv6Address]
+    """
+    Bind to a local IP Address.
+    """
+
+    local_addresses: NotRequired[Tuple[IPv4Address | None, IPv6Address | None]]
+    """
+    Bind to dual-stack local IP Addresses.
+    """
+
+    interface: NotRequired[str]
+    """
+    Bind connections only on the specified network interface.
+    
+    This option is only available on the following operating systems:
+    
+    - Android
+    - Fuchsia
+    - Linux
+    - macOS and macOS-like systems (iOS, tvOS, watchOS and visionOS)
+    - Solaris and illumos
+    
+    On Android, Linux, and Fuchsia, this uses the
+    [`SO_BINDTODEVICE`][man-7-socket] socket option. On macOS and macOS-like
+    systems, Solaris, and illumos, this instead uses the [`IP_BOUND_IF` and
+     `IPV6_BOUND_IF`][man-7p-ip] socket options (as appropriate).
+    
+    Note that connections will fail if the provided interface name is not a
+    network interface that currently exists when a connection is established.
+
+    [man-7-socket]: https://man7.org/linux/man-pages/man7/socket.7.html
+    [man-7p-ip]: https://docs.oracle.com/cd/E86824_01/html/E54777/ip-7p.html
+    """
+
+    timeout: NotRequired[datetime.timedelta]
+    """
+    The timeout to use for the request.
+    """
+
+    read_timeout: NotRequired[datetime.timedelta]
+    """
+    The read timeout to use for the request.
+    """
+
+    version: NotRequired[Version]
+    """
+    The HTTP version to use for the request.
     """
 
     redirect: NotRequired[redirect.Policy]

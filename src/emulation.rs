@@ -41,6 +41,7 @@ define_enum!(
     Chrome142,
     Chrome143,
     Chrome144,
+    Chrome145,
     Edge101,
     Edge122,
     Edge127,
@@ -54,6 +55,9 @@ define_enum!(
     Edge140,
     Edge141,
     Edge142,
+    Edge143,
+    Edge144,
+    Edge145,
     Firefox109,
     Firefox117,
     Firefox128,
@@ -69,6 +73,7 @@ define_enum!(
     Firefox144,
     Firefox145,
     Firefox146,
+    Firefox147,
     SafariIos17_2,
     SafariIos17_4_1,
     SafariIos16_5,
@@ -123,7 +128,7 @@ define_enum!(
 
 /// A struct to represent the `EmulationOption` class.
 #[derive(Clone)]
-#[pyclass(subclass)]
+#[pyclass(subclass, from_py_object)]
 pub struct EmulationOption(pub wreq_util::EmulationOption);
 
 #[pymethods]

@@ -1,5 +1,5 @@
 pub mod body;
-pub mod future;
+pub mod nogil;
 pub mod req;
 pub mod resp;
 
@@ -19,7 +19,7 @@ use wreq::{Proxy, tls::CertStore};
 use wreq_util::EmulationOption;
 
 use self::{
-    future::AllowThreads,
+    nogil::NoGIL,
     req::{execute_request, execute_websocket_request},
     resp::{BlockingResponse, BlockingWebSocket, Response, WebSocket},
 };
@@ -38,7 +38,7 @@ use crate::{
 
 /// A IP socket address.
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[pyclass(eq, str, frozen)]
+#[pyclass(eq, str, frozen, skip_from_py_object)]
 pub struct SocketAddr(pub std::net::SocketAddr);
 
 #[pymethods]
@@ -231,7 +231,7 @@ impl FromPyObject<'_, '_> for Builder {
 
 /// A client for making HTTP requests.
 #[derive(Default, Clone)]
-#[pyclass(subclass, frozen)]
+#[pyclass(subclass, frozen, skip_from_py_object)]
 pub struct Client {
     inner: wreq::Client,
 
@@ -241,7 +241,8 @@ pub struct Client {
 }
 
 /// A blocking client for making HTTP requests.
-#[pyclass(name = "Client", subclass, frozen)]
+#[derive(Default)]
+#[pyclass(name = "Client", subclass, frozen, skip_from_py_object)]
 pub struct BlockingClient(Client);
 
 // ====== Client =====
@@ -560,7 +561,7 @@ impl Client {
         url: PyBackedStr,
         kwds: Option<Request>,
     ) -> PyResult<Response> {
-        AllowThreads::new(
+        NoGIL::new(
             execute_request(self.inner.clone(), method, url, kwds),
             cancel,
         )
@@ -576,7 +577,7 @@ impl Client {
         url: PyBackedStr,
         kwds: Option<WebSocketRequest>,
     ) -> PyResult<WebSocket> {
-        AllowThreads::new(
+        NoGIL::new(
             execute_websocket_request(self.inner.clone(), url, kwds),
             cancel,
         )
