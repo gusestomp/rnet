@@ -1,11 +1,15 @@
-# Browser Emulation Examples
+# :busts_in_silhouette: Emulation
 
-## Simple Firefox Emulation
+!!! info "Emulation topics"
+    - Firefox/Chrome/Android
+    - Custom TLS/HTTP2
+
+### Simple Firefox Emulation
 
 ```python
 import asyncio
-from rnet import Client
-from rnet.emulation import Emulation
+from wreq import Client
+from wreq.emulation import Emulation
 
 
 async def main():
@@ -21,12 +25,12 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Chrome on Android Emulation
+### Chrome on Android Emulation
 
 ```python
 import asyncio
-from rnet import Client
-from rnet.emulation import Emulation, EmulationOS, EmulationOption
+from wreq import Client
+from wreq.emulation import Emulation, EmulationOS, EmulationOption
 
 
 async def main():
@@ -48,14 +52,14 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Advanced Configuration with Custom TLS and HTTP/2
+### Advanced Configuration with Custom TLS and HTTP/2
 
 ```python
 import asyncio
-from rnet import Client
-from rnet.tls import TlsOptions, TlsVersion, AlpnProtocol
-from rnet.http2 import Http2Options, PseudoId, PseudoOrder
-from rnet.header import HeaderMap, OrigHeaderMap
+from wreq import Client
+from wreq.tls import TlsOptions, TlsVersion, AlpnProtocol
+from wreq.http2 import Http2Options, PseudoId, PseudoOrder
+from wreq.header import HeaderMap, OrigHeaderMap
 
 
 async def main():

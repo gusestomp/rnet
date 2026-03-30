@@ -1,5 +1,4 @@
-from rnet.header import HeaderMap
-
+from wreq.header import HeaderMap
 
 if __name__ == "__main__":
     headers = HeaderMap()

@@ -1,14 +1,19 @@
-# Authentication Examples
+# :lock: Authentication Guide
 
-## Basic Authentication
+!!! tip "Supported authentication methods"
+    - Basic Auth
+    - Bearer Token
+    - Simple Token
+
+### Basic Authentication
 
 ```python
 import asyncio
-import rnet
+import wreq
 
 
 async def main():
-    resp = await rnet.get(
+    resp = await wreq.get(
         "https://httpbin.io/anything",
         basic_auth=("username", "password"),
     )
@@ -19,15 +24,15 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Bearer Token Authentication
+### Bearer Token Authentication
 
 ```python
 import asyncio
-import rnet
+import wreq
 
 
 async def main():
-    resp = await rnet.get(
+    resp = await wreq.get(
         "https://httpbin.io/anything",
         bearer_auth="token",
     )
@@ -38,15 +43,15 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Simple Auth Token
+### Simple Auth Token
 
 ```python
 import asyncio
-import rnet
+import wreq
 
 
 async def main():
-    resp = await rnet.get(
+    resp = await wreq.get(
         "https://httpbin.io/anything",
         auth="token",
     )

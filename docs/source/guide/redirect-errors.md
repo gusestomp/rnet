@@ -1,13 +1,17 @@
-# Redirect and Error Handling Examples
+# :repeat: Redirects & Error Handling
 
-## Custom Redirect Policy
+!!! info "On this page"
+    - Custom redirect policy
+    - Error handling
+
+### Custom Redirect Policy
 
 Control redirect behavior with custom policies:
 
 ```python
 import asyncio
-from rnet import Client, Response, redirect
-from rnet.redirect import Attempt, Action
+from wreq import Client, Response, redirect
+from wreq.redirect import Attempt, Action
 
 
 def custom_policy(attempt: Attempt) -> Action:
@@ -43,17 +47,17 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Error Handling
+### Error Handling
 
 Handle various request exceptions:
 
 ```python
 import datetime
-import rnet
+import wreq
 import asyncio
-import rnet.exceptions as exceptions
+import wreq.exceptions as exceptions
 
-rnet_errors = (
+wreq_errors = (
     exceptions.BodyError,
     exceptions.BuilderError,
     exceptions.ConnectionError,
@@ -70,10 +74,10 @@ rnet_errors = (
 async def test_timeout_error():
     print("\n--- TimeoutError (timeout) ---")
     try:
-        await rnet.get(
+        await wreq.get(
             "https://httpbin.io/delay/10", timeout=datetime.timedelta(seconds=1)
         )
-    except rnet_errors as e:
+    except wreq_errors as e:
         print(f"Caught: {type(e).__name__}: {e}")
     except Exception as e:
         print(f"Other error: {type(e).__name__}: {e}")
@@ -82,8 +86,8 @@ async def test_timeout_error():
 async def test_connection_error():
     print("\n--- ConnectionError (refused) ---")
     try:
-        await rnet.get("http://127.0.0.1:9999")
-    except rnet_errors as e:
+        await wreq.get("http://127.0.0.1:9999")
+    except wreq_errors as e:
         print(f"Caught: {type(e).__name__}: {e}")
     except Exception as e:
         print(f"Other error: {type(e).__name__}: {e}")

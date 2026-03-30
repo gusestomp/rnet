@@ -1,13 +1,17 @@
-# Proxy Examples
+# :globe_with_meridians: Proxy Usage
 
-## HTTP/HTTPS Proxy
+!!! info "On this page"
+    - HTTP/HTTPS proxy
+    - Unix Socket proxy
+
+### HTTP/HTTPS Proxy
 
 Using proxies with authentication:
 
 ```python
 import asyncio
-import rnet
-from rnet import Client, Proxy
+import wreq
+from wreq import Client, Proxy
 
 
 async def main():
@@ -21,15 +25,15 @@ async def main():
     print(await resp.text())
 
     # Send request via custom proxy
-    resp = await rnet.get(
+    resp = await wreq.get(
         "https://httpbin.io/anything",
         proxy=Proxy.all(
             url="http://127.0.0.1:6152",
             custom_http_headers={
-                "user-agent": "rnet",
+                "user-agent": "wreq",
                 "accept": "*/*",
                 "accept-encoding": "gzip, deflate, br",
-                "x-proxy": "rnet",
+                "x-proxy": "wreq",
             },
         ),
     )
@@ -40,19 +44,19 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Unix Socket Proxy
+### Unix Socket Proxy
 
 Using Unix sockets for local services like Docker:
 
 ```python
 import asyncio
-import rnet
-from rnet import Proxy
+import wreq
+from wreq import Proxy
 
 
 async def main():
     # Send request via Unix socket proxy
-    resp = await rnet.get(
+    resp = await wreq.get(
         "http://localhost/v1.41/containers/json",
         proxy=Proxy.unix("/var/run/docker.sock"),
     )

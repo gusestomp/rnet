@@ -88,15 +88,9 @@ class Response:
         """
         ...
 
-    def text(self) -> str:
+    def text(self, encoding: str | None = None) -> str:
         r"""
-        Get the text content of the response.
-        """
-        ...
-
-    def text_with_charset(self, encoding: str) -> str:
-        r"""
-        Get the full response text given a specific encoding.
+        Get the text content with the response encoding, defaulting to utf-8 when unspecified.
         """
         ...
 
@@ -133,7 +127,7 @@ class Response:
         in future versions.
         """
 
-    def __enter__(self) -> "Response": ...
+    def __enter__(self) -> Any: ...
     def __exit__(self, _exc_type: Any, _exc_value: Any, _traceback: Any) -> None: ...
     def __str__(self) -> str: ...
 
@@ -166,6 +160,11 @@ class WebSocket:
     remote_addr: SocketAddr | None
     r"""
     Get the remote address of the response.
+    """
+
+    local_addr: SocketAddr | None
+    r"""
+    Get the local address of the response.
     """
 
     protocol: str | None
@@ -210,7 +209,7 @@ class WebSocket:
         * `reason` - An optional reason for closing.
         """
 
-    def __enter__(self) -> "WebSocket": ...
+    def __enter__(self) -> Any: ...
     def __exit__(self, _exc_type: Any, _exc_value: Any, _traceback: Any) -> None: ...
     def __str__(self) -> str: ...
 
@@ -251,6 +250,30 @@ class Client:
         ```
         """
         ...
+
+    def close(self) -> None:
+        r"""
+        Closes the client and any associated resources.
+
+        After calling this method, the client should not be used to make further requests.
+
+        Examples:
+
+        ```python
+        import rnet
+
+        client = rnet.blocking.Client()
+
+        response = client.get('https://httpbin.io/get')
+        print(response.text())
+
+        client.close()
+        ```
+        """
+        ...
+
+    def __enter__(self) -> Any: ...
+    def __exit__(self, _exc_type: Any, _exc_value: Any, _traceback: Any) -> None: ...
 
     def request(
         self,

@@ -3,7 +3,7 @@ requires = ["maturin>=1.7,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "rnet"
+name = "wreq"
 requires-python = ">=3.11"
 classifiers = [
   "Programming Language :: Rust",
@@ -12,7 +12,6 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Libraries :: Python Modules",
@@ -21,7 +20,7 @@ classifiers = [
   'Operating System :: Unix',
   'Operating System :: MacOS',
 ]
-description = "An ergonomic Python HTTP client with TLS fingerprint"
+description = "An ergonomic Python HTTP Client with TLS fingerprint"
 readme = "README.md"
 dynamic = ["version"]
 license = { text = "Apache-2.0" }
@@ -29,21 +28,24 @@ authors = [{ name = "0x676e67", email = "gngppz@gmail.com" }]
 keywords = ["http", "client", "websocket", "ja3", "ja4"]
 
 [tool.maturin]
-features = ["pyo3/extension-module", "pyo3/generate-import-lib"]
-strip = true
 python-source = "python"
 
 [project.urls]
-Documentation = "https://github.com/0x676e67/rnet/blob/main/python/rnet"
-Homepage = "https://github.com/0x676e67/rnet"
-Repository = "https://github.com/0x676e67/rnet"
+Documentation = "https://python.wreq.org"
+Homepage = "https://github.com/0x676e67/wreq-python"
+Repository = "https://github.com/0x676e67/wreq-python"
 
-[dependency-groups]
-dev = [
-  "pytest>=8.3.5; python_version >= '3.8'",
-  "pytest>=7.4.4; python_version == '3.7'",
-  "pytest-asyncio>=0.25.3; python_version >= '3.9'",
-  "pytest-rerunfailures>=15.0; python_version >= '3.9'",
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-asyncio",
+  "pytest-rerunfailures",
+]
+docs = [
+  "zensical",
+  "mkdocs-material>=9.5.0",
+  "mkdocstrings[python]>=1.0.3",
+  "mike>=2.0.0",
 ]
 
 [tool.ruff]
