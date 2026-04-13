@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import (
     Any,
     AsyncGenerator,
-    Dict,
+    Mapping,
     Generator,
     NotRequired,
     Sequence,
+    Mapping,
     Tuple,
     TypedDict,
     Unpack,
@@ -16,6 +17,7 @@ from typing import (
 )
 
 from . import redirect
+from . import emulation
 from .cookie import *
 from .dns import ResolverOptions
 from .emulation import *
@@ -415,22 +417,9 @@ class Response:
         r"""
         Close the response.
 
-        **Current behavior:**
-
-        - When connection pooling is **disabled**: This method closes the network connection.
-        - When connection pooling is **enabled**: This method closes the response, prevents further body reads,
-          and returns the connection to the pool for reuse.
-
-        **Future changes:**
-
-        In future versions, this method will be changed to always close the network connection regardless of
-        whether connection pooling is enabled or not.
-
-        **Recommendation:**
-
-        It is **not recommended** to manually call this method at present. Instead, use context managers
-        (async with statement) to properly manage response lifecycle. Wait for the improved implementation
-        in future versions.
+        This method closes the network connection regardless of whether connection pooling is
+        enabled or not. It is recommended to use async context managers (`async with` statement)
+        to properly manage response lifecycle instead of calling this method manually.
         """
 
     async def __aenter__(self) -> Any: ...
@@ -503,7 +492,7 @@ class WebSocket:
     def __str__(self) -> str: ...
 
 class ClientConfig(TypedDict):
-    emulation: NotRequired[Emulation | EmulationOption]
+    emulation: NotRequired[emulation.Emulation | emulation.Profile]
     """Emulation config."""
 
     user_agent: NotRequired[str]
@@ -511,7 +500,7 @@ class ClientConfig(TypedDict):
     Sets the `User-Agent` header to be used by this client.
     """
 
-    headers: NotRequired[Dict[str, str] | HeaderMap]
+    headers: NotRequired[Mapping[str, str] | HeaderMap]
     """
     Sets the default headers for every request.
     """
@@ -659,22 +648,22 @@ class ClientConfig(TypedDict):
 
     # ======== TLS options ========
 
-    verify: NotRequired[bool | Path | CertStore]
+    tls_verify: NotRequired[bool | Path | CertStore]
     """
     Sets whether to verify TLS certificates.
     """
 
-    verify_hostname: NotRequired[bool]
+    tls_verify_hostname: NotRequired[bool]
     """
     Configures the use of hostname verification when connecting.
     """
 
-    identity: NotRequired[Identity]
+    tls_identity: NotRequired[Identity]
     """
     Represents a private key and X509 cert as a client certificate.
     """
 
-    keylog: NotRequired[KeyLog]
+    tls_keylog: NotRequired[KeyLog]
     """
     Key logging policy (environment or file).
     """
@@ -684,12 +673,12 @@ class ClientConfig(TypedDict):
     Add TLS information as `TlsInfo` extension to responses.
     """
 
-    min_tls_version: NotRequired[TlsVersion]
+    tls_min_version: NotRequired[TlsVersion]
     """
     Minimum TLS version.
     """
 
-    max_tls_version: NotRequired[TlsVersion]
+    tls_max_version: NotRequired[TlsVersion]
     """
     Maximum TLS version.
     """
@@ -773,12 +762,12 @@ class ClientConfig(TypedDict):
     """
 
 class Request(TypedDict):
-    emulation: NotRequired[Emulation | EmulationOption]
+    emulation: NotRequired[emulation.Emulation | emulation.Profile]
     """
     The Emulation settings for the request.
     """
 
-    headers: NotRequired[Dict[str, str] | HeaderMap]
+    headers: NotRequired[Mapping[str, str] | HeaderMap]
     """
     The headers to use for the request.
     """
@@ -793,7 +782,7 @@ class Request(TypedDict):
     The option enables default headers.
     """
 
-    cookies: NotRequired[str | Dict[str, str]]
+    cookies: NotRequired[str | Mapping[str, str]]
     """
     The cookies to use for the request.
     """
@@ -899,7 +888,7 @@ class Request(TypedDict):
 
     query: NotRequired[
         Sequence[Tuple[str, str | int | float | bool]]
-        | Dict[str, str | int | float | bool]
+        | Mapping[str, str | int | float | bool]
     ]
     """
     The query parameters to use for the request.
@@ -907,7 +896,7 @@ class Request(TypedDict):
 
     form: NotRequired[
         Sequence[Tuple[str, str | int | float | bool]]
-        | Dict[str, str | int | float | bool]
+        | Mapping[str, str | int | float | bool]
     ]
     """
     The form parameters to use for the request.
@@ -923,7 +912,7 @@ class Request(TypedDict):
         | bytes
         | Sequence[Tuple[str, str]]
         | Tuple[str, str | int | float | bool]
-        | Dict[str, str | int | float | bool]
+        | Mapping[str, str | int | float | bool]
         | Any
         | Generator[bytes, str, None]
         | AsyncGenerator[bytes, str]
@@ -938,7 +927,7 @@ class Request(TypedDict):
     """
 
 class WebSocketRequest(TypedDict):
-    emulation: NotRequired[Emulation | EmulationOption]
+    emulation: NotRequired[emulation.Emulation | emulation.Profile]
     """
     The Emulation settings for the request.
     """
@@ -963,7 +952,7 @@ class WebSocketRequest(TypedDict):
     Bind to an interface by SO_BINDTODEVICE.
     """
 
-    headers: NotRequired[Dict[str, str] | HeaderMap]
+    headers: NotRequired[Mapping[str, str] | HeaderMap]
     """
     The headers to use for the request.
     """
@@ -978,7 +967,7 @@ class WebSocketRequest(TypedDict):
     The option enables default headers.
     """
 
-    cookies: NotRequired[str | Dict[str, str]]
+    cookies: NotRequired[str | Mapping[str, str]]
     """
     The cookies to use for the request.
     """
@@ -988,9 +977,9 @@ class WebSocketRequest(TypedDict):
     The protocols to use for the request.
     """
 
-    force_http2: NotRequired[bool]
+    version: NotRequired[Version]
     """
-    Whether to use HTTP/2 for the websocket.
+    The HTTP version to use for the request.
     """
 
     auth: NotRequired[str]
@@ -1010,7 +999,7 @@ class WebSocketRequest(TypedDict):
 
     query: NotRequired[
         Sequence[Tuple[str, str | int | float | bool]]
-        | Dict[str, str | int | float | bool]
+        | Mapping[str, str | int | float | bool]
     ]
     """
     The query parameters to use for the request.

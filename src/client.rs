@@ -7,7 +7,6 @@ mod param;
 mod query;
 
 use std::{
-    fmt,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     sync::Arc,
     time::Duration,
@@ -16,8 +15,7 @@ use std::{
 use pyo3::{IntoPyObjectExt, coroutine::CancelHandle, prelude::*, pybacked::PyBackedStr};
 use req::{Request, WebSocketRequest};
 use tokio_util::sync::CancellationToken;
-use wreq::{Proxy, tls::CertStore};
-use wreq_util::EmulationOption;
+use wreq::{Proxy, tls::trust::CertStore};
 
 use self::{
     nogil::NoGIL,
@@ -27,6 +25,7 @@ use self::{
 use crate::{
     cookie::Jar,
     dns::{HickoryDnsResolver, LookupIpStrategy, ResolverOptions},
+    emulate::EmulationLike,
     error::Error,
     extractor::Extractor,
     header::{HeaderMap, OrigHeaderMap},
@@ -55,17 +54,13 @@ impl SocketAddr {
     }
 }
 
-impl fmt::Display for SocketAddr {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
+define_display!(SocketAddr);
 
 /// A builder for `Client`.
 #[derive(Default)]
 struct Builder {
     /// The Emulation settings for the client.
-    emulation: Option<Extractor<EmulationOption>>,
+    emulation: Option<EmulationLike>,
     /// The user agent to use for the client.
     user_agent: Option<PyBackedStr>,
     /// The headers to use for the client.
@@ -127,19 +122,19 @@ struct Builder {
 
     // ========= TLS options =========
     /// Whether to verify the SSL certificate or root certificate file path.
-    verify: Option<TlsVerify>,
+    tls_verify: Option<TlsVerify>,
     /// Whether to verify the hostname in the SSL certificate.
-    verify_hostname: Option<bool>,
+    tls_verify_hostname: Option<bool>,
     /// Represents a private key and X509 cert as a client certificate.
-    identity: Option<Identity>,
+    tls_identity: Option<Identity>,
     /// Key logging policy for TLS session keys.
-    keylog: Option<KeyLog>,
+    tls_keylog: Option<KeyLog>,
     /// Add TLS information as `TlsInfo` extension to responses.
     tls_info: Option<bool>,
     /// The minimum TLS version to use for the client.
-    min_tls_version: Option<TlsVersion>,
+    tls_min_version: Option<TlsVersion>,
     /// The maximum TLS version to use for the client.
-    max_tls_version: Option<TlsVersion>,
+    tls_max_version: Option<TlsVersion>,
     /// Sets the TLS options for the client.
     tls_options: Option<TlsOptions>,
 
@@ -211,13 +206,13 @@ impl FromPyObject<'_, '_> for Builder {
         extract_option!(ob, builder, http1_options);
         extract_option!(ob, builder, http2_options);
 
-        extract_option!(ob, builder, verify);
-        extract_option!(ob, builder, verify_hostname);
-        extract_option!(ob, builder, identity);
-        extract_option!(ob, builder, keylog);
+        extract_option!(ob, builder, tls_verify);
+        extract_option!(ob, builder, tls_verify_hostname);
+        extract_option!(ob, builder, tls_identity);
+        extract_option!(ob, builder, tls_keylog);
         extract_option!(ob, builder, tls_info);
-        extract_option!(ob, builder, min_tls_version);
-        extract_option!(ob, builder, max_tls_version);
+        extract_option!(ob, builder, tls_min_version);
+        extract_option!(ob, builder, tls_max_version);
         extract_option!(ob, builder, tls_options);
 
         extract_option!(ob, builder, dns_options);
@@ -262,7 +257,7 @@ impl Client {
 
             if let Some(mut config) = kwds {
                 // Emulation options.
-                apply_option!(set_if_some_inner, builder, config.emulation, emulation);
+                apply_option!(set_if_some, builder, config.emulation, emulation);
 
                 // User agent options.
                 apply_option!(
@@ -293,7 +288,7 @@ impl Client {
                 } else if config.cookie_store.unwrap_or_default() {
                     // `cookie_store` is true and no provider was given, so create a default jar to
                     // be accessed later through the client interface.
-                    let jar = Jar::new(None);
+                    let jar = Jar::new();
                     builder = builder.cookie_provider(jar.clone().0);
                     cookie_jar = Some(jar);
                 }
@@ -373,37 +368,44 @@ impl Client {
                 apply_option!(
                     set_if_some_map,
                     builder,
-                    config.min_tls_version,
-                    min_tls_version,
+                    config.tls_min_version,
+                    tls_min_version,
                     TlsVersion::into_ffi
                 );
                 apply_option!(
                     set_if_some_map,
                     builder,
-                    config.max_tls_version,
-                    max_tls_version,
+                    config.tls_max_version,
+                    tls_max_version,
                     TlsVersion::into_ffi
                 );
                 apply_option!(set_if_some, builder, config.tls_info, tls_info);
                 apply_option!(
                     set_if_some,
                     builder,
-                    config.verify_hostname,
-                    verify_hostname
+                    config.tls_verify_hostname,
+                    tls_verify_hostname
                 );
-                apply_option!(set_if_some_inner, builder, config.identity, identity);
-                apply_option!(set_if_some_inner, builder, config.keylog, keylog);
+                apply_option!(
+                    set_if_some_inner,
+                    builder,
+                    config.tls_identity,
+                    tls_identity
+                );
+                apply_option!(set_if_some_inner, builder, config.tls_keylog, tls_keylog);
                 apply_option!(set_if_some_inner, builder, config.tls_options, tls_options);
-                if let Some(verify) = config.verify.take() {
+                if let Some(verify) = config.tls_verify.take() {
                     builder = match verify {
-                        TlsVerify::Verification(verify) => builder.cert_verification(verify),
+                        TlsVerify::Verification(verify) => builder.tls_cert_verification(verify),
                         TlsVerify::CertificatePath(path_buf) => {
                             let pem_data = std::fs::read(path_buf)?;
                             let store =
                                 CertStore::from_pem_stack(pem_data).map_err(Error::Library)?;
-                            builder.cert_store(store)
+                            builder.tls_cert_store(store)
                         }
-                        TlsVerify::CertificateStore(cert_store) => builder.cert_store(cert_store.0),
+                        TlsVerify::CertificateStore(cert_store) => {
+                            builder.tls_cert_store(cert_store.0)
+                        }
                     }
                 }
 

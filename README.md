@@ -48,7 +48,7 @@ from wreq import Client, Emulation
 
 async def main():
     # Build a client
-    client = Client(emulation=Emulation.Safari26)
+    client = Client(emulation=Emulation.Firefox149)
 
     # Use the API you're already familiar with
     resp = await client.get("https://tls.peet.ws/api/all")
@@ -107,7 +107,7 @@ maturin build --release
 
 ## Benchmark
 
-Outperforms `requests`, `httpx`, `aiohttp`, and `curl_cffi`, and you can see the [benchmark](https://github.com/0x676e67/wreq-python/tree/main/bench) for details — benchmark data is for reference only and actual performance may vary based on your environment and use case.
+Outperforms `requests`, `httpx`, `aiohttp`, and `curl_cffi`, and you can see the [benchmark](https://github.com/0x676e67/wreq-python/tree/main/bench) for details. The benchmark suite is driven by [pyperf](https://github.com/psf/pyperf), and results are still for reference only because network and system conditions affect outcomes.
 
 ## Services
 
@@ -151,9 +151,38 @@ Designed for developers, it offers high accuracy, low price, low latency, and ea
 
 ---
 
-<a href="https://www.thordata.com/products/residential-proxies?ls=github&lk=rnet" target="_blank">
-<img src="https://raw.githubusercontent.com/0x676e67/wreq-python/main/.github/assets/thordata.svg" width="149" height="47">
+<a href="https://www.rapidproxy.io/?ref=wreq" target="_blank">
+<img src="https://raw.githubusercontent.com/0x676e67/wreq-python/main/.github/assets/rapidproxy.png"  width="140", height="60">
 </a>
+
+**[RapidProxy](https://www.rapidproxy.io/?ref=wreq)** delivers fast, reliable proxy infrastructure for large-scale data operations. With high concurrency, non-expiring traffic, and AI-powered CAPTCHA bypass, it ensures efficient, uninterrupted data collection—trusted by developers worldwide.
+
+**90M+ Residential IPs** • **Smart Rotation** • **High Success Rate** • **Built for Scale**
+
+**Special Offer**: Try it free —  Pricing from $0.65/GB with non-expiring traffic. Use code RAPID10 for 10% off.
+
+**[Website](https://www.rapidproxy.io/?ref=wreq)** | **[Linkedin](https://www.linkedin.com/in/rapid-proxy-9b6059357/)** | **[Telegram](https://t.me/rapidproxyio)**
+
+---
+
+<a href="https://www.swiftproxy.net/?ref=wreqpython" target="_blank">
+<img src="https://raw.githubusercontent.com/0x676e67/wreq-python/main/.github/assets/swiftproxy.png" width="149" height="40">
+</a>
+
+**[Swiftproxy](https://www.swiftproxy.net/?ref=wreqpython)** powers your web scraping with reliable residential proxies, giving you access to a dependable pool of residential IPs for efficient data extraction while delivering high success rates, anti-ban protection, and automatic rotation at scale.
+
+**Global Residential IPs** • **Auto Rotation** • **Anti-Ban** • **Scraping at Scale**
+
+**Exclusive Offer**: Get 500MB free trial traffic + an exclusive 10% OFF code: PROXY90
+
+**[Linkedin](https://www.linkedin.com/company/swiftproxy/)** | **[Discord](https://discord.com/invite/VdRMfU5RWm)** | **[Telegram](https://t.me/swiftproxy357)**
+
+---
+
+<a href="https://www.thordata.com/products/residential-proxies?ls=github&lk=rnet" target="_blank">
+<img src="https://raw.githubusercontent.com/0x676e67/wreq-python/main/.github/assets/thordata.svg" width="149" height="45">
+</a>
+
 
 **[Thordata](https://www.google.com/url?q=https://www.thordata.com/?ls%3Dgithub%26lk%3Drnet&sa=D&source=editors&ust=1768812458958099&usg=AOvVaw1VwMpnrjCaf7iWbVsM5V0k)**: Get Reliable Global Proxies at an Unbeatable Value. 
 

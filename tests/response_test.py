@@ -1,9 +1,9 @@
 import pytest
-import wreq
+import rnet
 from pathlib import Path
-from wreq import Version, Multipart, Part
+from rnet import Version, Multipart, Part
 
-client = wreq.Client(tls_info=True)
+client = rnet.Client(tls_info=True)
 
 
 @pytest.mark.asyncio

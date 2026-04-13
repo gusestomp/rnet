@@ -47,7 +47,27 @@ docs = [
   "mkdocstrings[python]>=1.0.3",
   "mike>=2.0.0",
 ]
+bench = [
+  "pytest",
+  "pyperf",
+  "starlette",
+  "niquests",
+  "httpx",
+  "requests",
+  "wreq",
+  "curl_cffi",
+  "aiohttp",
+  "pycurl",
+  "uvicorn",
+  "starlette",
+  "typing_extensions",
+  "uvloop; platform_system != 'Windows'",
+  "ry",
+]
 
 [tool.ruff]
 [tool.ruff.lint]
 ignore = ["F403", "F405"]
+
+[tool.pyright]
+reportArgumentType = false
